@@ -1,0 +1,196 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.zholdak</groupId>
+	<artifactId>atmhrp</artifactId>
+	
+	<version>0.0.1</version>
+	
+	<name>ATM (Horse Race Park)</name>
+	
+	
+	<properties>
+	
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.8</java.version>
+		<java.minVersion>1.8.0</java.minVersion>
+		<main.class>com.zholdak.atmhrp.Application</main.class>
+		<author>Aleksey Zholdak</author>
+		<copyright>Aleksey Zholdak</copyright>
+		<companyName>Aleksey Zholdak</companyName>
+		<supportUrl>Aleksey Zholdak</supportUrl>
+
+		<directory.publish>publish</directory.publish>
+		<directory.libs>libs</directory.libs>
+		
+		<project.publish.directory.base>${project.basedir}/${directory.publish}</project.publish.directory.base>
+		<project.publish.directory.libs>${project.publish.directory.base}/${directory.libs}</project.publish.directory.libs>
+		
+		<project.resources.directory>${basedir}/src/main/resources</project.resources.directory>
+		<project.resourcesFiltered.directory>${basedir}/src/main/resources-filtered</project.resourcesFiltered.directory>
+	
+	</properties>
+
+	<dependencies>
+	
+	</dependencies>
+	
+	<build>
+	
+		<resources>
+			<resource>
+				<directory>${project.resources.directory}</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>**/*.bak</exclude>
+				</excludes>
+			</resource>
+			<resource>
+				<directory>${project.resourcesFiltered.directory}</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+	
+		<plugins>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.5.1</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<encoding>${project.build.sourceEncoding}</encoding>
+					<compilerArgs>
+						<arg>-g:vars</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.10</version>
+				<executions>
+					<execution>
+						<id>build-classpath</id>
+						<phase>package</phase>
+						<goals>
+							<goal>build-classpath</goal>
+						</goals>
+						<configuration>
+							<includeScope>provided</includeScope>
+							<pathSeparator>;</pathSeparator>
+							<fileSeparator>/</fileSeparator>
+							<prefix>./${directory.libs}</prefix>
+							<outputProperty>libs.classpath</outputProperty>
+						</configuration>
+					</execution>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<includeScope>provided</includeScope>
+							<outputDirectory>${project.publish.directory.libs}</outputDirectory>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.gmavenplus</groupId>
+				<artifactId>gmavenplus-plugin</artifactId>
+				<version>1.5</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy-all</artifactId>
+						<version>2.4.6</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>ch.qos.logback</groupId>
+						<artifactId>logback-classic</artifactId>
+						<version>1.0.13</version>
+						<scope>runtime</scope>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>add-dynamic-properties</id>
+						<phase>package</phase>
+						<goals>
+							<goal>execute</goal>
+						</goals>
+						<configuration>
+							<scripts>
+								<script><![CDATA[
+									props = project.properties;
+									log.info("Modifying classpath...")
+									props.setProperty('libs.classpath', props.getProperty('libs.classpath').replace(';', ' ') )
+								]]></script>
+    						</scripts>
+    					</configuration>      
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.6</version>
+				<configuration>
+					<archive>
+						<index>true</index>
+						<manifest>
+							<mainClass>${main.class}</mainClass>
+						</manifest>
+						<manifestEntries>
+							<Class-Path>./ ./${directory.libs} ${libs.classpath}</Class-Path>
+							<Built-By>${author}</Built-By>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.6</version>
+				<executions>
+					<execution>
+						<id>create-archive</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<descriptor>src/assembly/dep.xml</descriptor>
+					<outputDirectory>${project.build.directory}</outputDirectory>
+					<finalName>${project.artifactId}-${project.version}</finalName>
+					<archive>
+						<index>false</index>
+						<manifest>
+							<mainClass>${main.class}</mainClass>
+						</manifest>
+						<manifestEntries>
+							<Class-Path>./ ./${directory.libs} ${libs.classpath}</Class-Path>
+							<Built-By>${author}</Built-By>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			
+	    </plugins>
+	    
+	</build>
+	
+	
+</project>
